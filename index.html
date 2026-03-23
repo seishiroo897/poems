@@ -1,0 +1,1225 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Embroidered</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50' y='85' font-size='85' text-anchor='middle' fill='%238b5a3c'%3E🌷%3C/text%3E%3C/svg%3E">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            background: #e8dccc;
+            background-image:
+                radial-gradient(circle at 25% 40%, rgba(235,215,175,0.5) 2%, transparent 2.5%),
+                radial-gradient(circle at 70% 85%, rgba(200,170,130,0.4) 1.8%, transparent 2%);
+            background-size: 55px 55px, 48px 48px;
+            font-family: 'Cormorant Garamond','Times New Roman',serif;
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px; position: relative;
+        }
+        
+        /* Hide scrollbar while first envelope is showing */
+        body.envelope-showing {
+            overflow: hidden;
+        }
+
+        /* Prevent scrolling when modal is open */
+        body.modal-open {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Prevent scrolling when second envelope is active */
+        body.second-envelope-active {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; pointer-events: none;
+            background-image: url('https://www.transparenttextures.com/patterns/aged-paper.png');
+            opacity: 0.35; z-index: 1;
+        }
+        .app-container { width: 100%; max-width: 1400px; position: relative; z-index: 2; }
+
+        .folded-letter {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10,6,3,0.65);
+            backdrop-filter: blur(7px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 200;
+            transition: opacity 0.9s ease;
+        }
+
+        .envelope-scene {
+            position: relative;
+            width: 520px; max-width: 90vw;
+            cursor: pointer;
+            perspective: 1400px;
+            perspective-origin: 50% 30%;
+        }
+
+        .envelope-body {
+            position: relative; width: 100%; padding-bottom: 60%;
+            background: #f7edd8;
+            background-image: linear-gradient(155deg,#fdf6e8 0%,#f2e0c0 52%,#ebd4a8 100%);
+            border-radius: 3px 3px 5px 5px;
+            box-shadow: 0 28px 52px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.25);
+        }
+        .envelope-body::after {
+            content: ""; position: absolute;
+            bottom: 0; left: 0; right: 0; height: 60%;
+            background:
+                linear-gradient(135deg,rgba(160,128,72,0.13) 49.8%,transparent 50%),
+                linear-gradient(225deg,rgba(160,128,72,0.13) 49.8%,transparent 50%);
+            pointer-events: none; border-radius: 0 0 5px 5px;
+        }
+        .envelope-inner {
+            position: absolute; inset: 0;
+            padding: 16px 20px 18px;
+            display: flex; flex-direction: column;
+        }
+        .envelope-top-row { display: flex; justify-content: space-between; align-items: flex-start; }
+        .return-address {
+            font-family: 'Caveat',cursive; font-size: 10.5px;
+            color: rgba(100,70,35,0.48); line-height: 1.65; letter-spacing: 0.3px;
+        }
+        .stamp {
+            width: 50px; height: 60px; background: #fefaf0;
+            border: 1.5px solid #cca870;
+            outline: 4px dotted rgba(185,145,88,0.45); outline-offset: -7px;
+            box-shadow: 1px 2px 5px rgba(0,0,0,0.14);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; position: relative; border-radius: 2px;
+        }
+        .stamp::before {
+            content: "LOVE"; position: absolute;
+            bottom: 3px; left: 0; right: 0; text-align: center;
+            font-family: 'Caveat',cursive; font-size: 7px;
+            color: rgba(140,100,50,0.58); letter-spacing: 1.5px;
+        }
+        .postmark {
+            position: absolute; top: 8px; right: 10px;
+            width: 68px; height: 68px; pointer-events: none;
+        }
+        .postmark svg { width: 100%; height: 100%; }
+        .address-body {
+            flex: 1; display: flex; flex-direction: column;
+            justify-content: center; padding: 8px 0 4px 2px;
+        }
+        .address-to-sm {
+            font-family: 'Caveat',cursive; font-size: 9.5px;
+            color: rgba(100,70,35,0.4); letter-spacing: 2px;
+            text-transform: uppercase; margin-bottom: 4px;
+        }
+        .address-name { font-family: 'Caveat',cursive; font-size: 27px; color: #4e2e10; line-height: 1.2; }
+        .address-sub {
+            font-family: 'Cormorant Garamond',serif; font-style: italic;
+            font-size: 12px; color: rgba(110,75,38,0.52); margin-top: 4px; letter-spacing: 0.4px;
+        }
+        .envelope-lines { margin-top: auto; padding-bottom: 24px; }
+        .envelope-lines div { height: 1px; background: rgba(180,145,88,0.18); margin-bottom: 9px; }
+
+        .flap-3d-container {
+            position: absolute; top: 0; left: 0; width: 100%;
+            transform-style: preserve-3d;
+            transform-origin: top center;
+            transition: transform 0.9s cubic-bezier(0.34, 1.2, 0.64, 1);
+            z-index: 8;
+        }
+        .envelope-scene.flap-open .flap-3d-container { 
+            transform: rotateX(-174deg);
+            transition-delay: 0.15s;
+        }
+
+        .wax-seal {
+            position: absolute; top: 120px; left: 50%;
+            transform: translateX(-50%);
+            width: 54px; height: 54px;
+            background: radial-gradient(circle at 34% 30%,#c84232,#8a1f10);
+            border-radius: 50%;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.42), inset 0 1px 3px rgba(255,215,170,0.42);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; color: #f2d888;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+            z-index: 10;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            cursor: pointer;
+        }
+        .envelope-scene.flap-open .wax-seal {
+            transform: translateX(-50%) scale(0.3) translateY(30px);
+            opacity: 0;
+            transition-delay: 0.2s;
+        }
+        .wax-seal.cracking {
+            animation: crackShake 0.25s ease-in-out;
+        }
+        @keyframes crackShake {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            25% { transform: translateX(-50%) scale(1.02) rotate(1deg); }
+            75% { transform: translateX(-50%) scale(0.98) rotate(-1deg); }
+        }
+
+        /* ── FLAP SHAPE — responsive clip-path triangle ── */
+        .flap-shape {
+            width: 100%;
+            padding-top: 28.46%;
+            position: relative;
+            overflow: hidden;
+        }
+        .flap-shape::before {
+            content: "";
+            position: absolute; inset: 0;
+            background: #ecdcbd;
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+        }
+        .flap-shape::after {
+            content: "";
+            position: absolute; inset: 0;
+            background: rgba(250,244,232,0.18);
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+            pointer-events: none;
+        }
+
+        .click-hint {
+            position: absolute; bottom: -48px; left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Caveat',cursive; font-size: 15px;
+            color: rgba(255,235,200,0.62); white-space: nowrap;
+            pointer-events: none; letter-spacing: 0.5px;
+            animation: clickHintBob 2.6s ease-in-out infinite;
+        }
+
+        .paper-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 250; pointer-events: none; opacity: 0;
+        }
+        .paper-overlay.appearing {
+            pointer-events: auto;
+            animation: paperBloom 0.75s cubic-bezier(0.22,1,0.36,1) forwards;
+        }
+        @keyframes paperBloom {
+            0%   { opacity:0; transform:scale(0.84) translateY(28px); filter:blur(10px); }
+            65%  { filter:blur(0); }
+            100% { opacity:1; transform:scale(1) translateY(0); filter:blur(0); }
+        }
+
+        .paper-card {
+            width: 92%; max-width: 520px;
+            background: #fffef8;
+            background-image: repeating-linear-gradient(
+                180deg, transparent, transparent 26px,
+                rgba(175,150,105,0.14) 26px, rgba(175,150,105,0.14) 27px
+            );
+            border-radius: 4px;
+            box-shadow: 0 2px 0 rgba(200,170,100,0.22), 0 28px 52px rgba(0,0,0,0.5), 0 6px 16px rgba(0,0,0,0.22);
+            overflow: hidden; cursor: pointer; position: relative;
+        }
+        .paper-card::before {
+            content: ""; position: absolute;
+            top: 0; left: 0; right: 0; height: 6px;
+            background: linear-gradient(180deg,rgba(160,130,80,0.16),transparent);
+            pointer-events: none; z-index: 1;
+        }
+        .bouquet-wrap { width: 100%; line-height: 0; display: block; }
+        .bouquet-wrap canvas { width: 100% !important; height: auto !important; display: block; }
+
+        .paper-continue-hint {
+            position: absolute; bottom: 14px; left: 0; right: 0; text-align: center;
+            font-family: 'Caveat',cursive; font-size: 14px;
+            color: rgba(255,220,200,0.75); letter-spacing: 0.5px;
+            opacity: 0; transition: opacity 1s ease; pointer-events: none;
+        }
+        .paper-continue-hint.visible {
+            opacity: 1;
+            animation: hintBob 2.5s ease-in-out infinite;
+        }
+
+        @keyframes hintBob {
+            0%,100% { opacity:0.55; transform:translateY(0); }
+            50%      { opacity:1;   transform:translateY(-5px); }
+        }
+        @keyframes clickHintBob {
+            0%,100% { opacity:0.5; transform:translateX(-50%) translateY(0); }
+            50%      { opacity:1;  transform:translateX(-50%) translateY(-5px); }
+        }
+
+        .gallery-section {
+            opacity:0; visibility:hidden;
+            transition: opacity 0.9s cubic-bezier(0.2,0.9,0.4,1), visibility 0s linear 0.9s;
+            background: rgba(250,242,230,0.75); border-radius: 48px;
+            padding: 2rem 1.8rem; backdrop-filter: blur(5px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+        }
+        .gallery-section.visible {
+            opacity:1; visibility:visible;
+            transition: opacity 0.9s cubic-bezier(0.2,0.9,0.4,1), visibility 0s linear 0s;
+        }
+        
+        /* Prevent gallery interaction when modal is open or when waiting for second envelope */
+        body.modal-open .gallery-section,
+        body.gallery-locked .gallery-section {
+            pointer-events: none;
+            user-select: none;
+        }
+        
+        /* Second envelope overlay */
+        .second-envelope-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10,6,3,0.75);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0s linear 0.4s, opacity 0.4s ease;
+        }
+        .second-envelope-overlay.active {
+            visibility: visible;
+            opacity: 1;
+            transition: visibility 0s linear 0s, opacity 0.4s ease;
+        }
+        
+        .second-envelope-scene {
+            position: relative;
+            width: 550px;
+            max-width: 90vw;
+            cursor: pointer;
+            perspective: 1400px;
+            perspective-origin: 50% 30%;
+            animation: envelopeFloatIn 0.7s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+        }
+        
+        .second-envelope-body {
+            position: relative;
+            width: 100%;
+            padding-bottom: 68%;
+            background: #f7edd8;
+            background-image: linear-gradient(155deg,#fdf6e8 0%,#f2e0c0 52%,#ebd4a8 100%);
+            border-radius: 3px 3px 8px 8px;
+            box-shadow: 0 28px 52px rgba(0,0,0,0.45), 0 6px 16px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .second-flap-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            transform-style: preserve-3d;
+            transform-origin: top center;
+            transition: transform 0.8s cubic-bezier(0.34, 1.2, 0.64, 1);
+            z-index: 15;
+        }
+        
+        .second-envelope-scene.flap-open .second-flap-container {
+            transform: rotateX(-174deg);
+        }
+        
+        .second-flap-shape {
+            width: 100%;
+            padding-top: 34%;
+            position: relative;
+            overflow: hidden;
+        }
+        .second-flap-shape::before {
+            content: "";
+            position: absolute; inset: 0;
+            background: #ecdcbd;
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+        }
+        
+        .second-wax-seal {
+            position: absolute;
+            top: 28%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 56px;
+            height: 56px;
+            background: radial-gradient(circle at 34% 30%, #c84232, #8a1f10);
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #f2d888;
+            z-index: 20;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        .second-envelope-scene.flap-open .second-wax-seal {
+            transform: translateX(-50%) scale(0.3) translateY(30px);
+            opacity: 0;
+        }
+        
+        .second-envelope-inner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+        }
+        
+        /* FIX 2: Letter inside second envelope — LARGER */
+        .second-letter-content {
+            width: 94%;
+            height: 92%;
+            background: #fffef5;
+            background-image: repeating-linear-gradient(180deg, transparent, transparent 26px, rgba(175,150,105,0.12) 26px, rgba(175,150,105,0.12) 27px);
+            border-radius: 4px;
+            padding: 28px 25px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            overflow-y: auto;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            line-height: 1.8;
+            color: #3a2a1e;
+            text-align: center;
+            opacity: 0;
+            transform: scale(0.92);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            pointer-events: auto;
+        }
+        
+        /* Hide scrollbar but keep functionality */
+        .second-letter-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .second-letter-content::-webkit-scrollbar-track {
+            background: rgba(175,150,105,0.1);
+            border-radius: 4px;
+        }
+        
+        .second-letter-content::-webkit-scrollbar-thumb {
+            background: rgba(175,150,105,0.4);
+            border-radius: 4px;
+        }
+        
+        .second-envelope-scene.flap-open .second-letter-content {
+            opacity: 1;
+            transform: scale(1);
+            transition-delay: 0.2s;
+        }
+        
+        .second-letter-content h3 {
+            font-family: 'Caveat', cursive;
+            font-size: 1.8rem;
+            color: #8b5a3c;
+            margin-bottom: 20px;
+            border-bottom: 1px dashed #e0c8a8;
+            display: inline-block;
+        }
+        
+        .second-letter-content p {
+            margin: 15px 0;
+        }
+        
+        .second-letter-content .closing {
+            margin-top: 25px;
+            font-style: italic;
+            font-family: 'Caveat', cursive;
+            font-size: 1.2rem;
+        }
+        
+        .second-close-hint {
+            margin-top: 20px;
+            font-size: 0.75rem;
+            color: rgba(100, 70, 40, 0.6);
+            font-style: italic;
+        }
+        
+        @keyframes envelopeFloatIn {
+            0% { opacity: 0; transform: translateY(40px) scale(0.95); filter: blur(8px); }
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+
+        .hero { text-align:center; margin-bottom:52px; }
+        .hero-tag {
+            display: block;
+            font-family: 'Caveat', cursive;
+            font-size: 0.95rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #b89060;
+            margin-bottom: 0.5rem;
+            opacity: 0.78;
+        }
+        .hero h1 { font-family:'Caveat',cursive; font-size:4.2rem; color:#533e2a; text-shadow:2px 2px 8px rgba(0,0,0,0.05); }
+        .hero p { font-size:1.35rem; color:#7d5a3e; border-top:1px solid #dbbc91; display:inline-block; padding-top:14px; }
+
+        .poem-modal {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.55); backdrop-filter:blur(6px);
+            display:flex; align-items:center; justify-content:center;
+            z-index:400; visibility:hidden; opacity:0;
+            transition: visibility 0s linear 0.4s, opacity 0.4s ease;
+        }
+        .poem-modal.active {
+            visibility:visible; opacity:1;
+            transition: visibility 0s linear 0s, opacity 0.4s ease;
+        }
+        .letter-modal-card {
+            width:90%; max-width:720px;
+            background:#fffbf2;
+            background-image:linear-gradient(to bottom,#fffcf5,#fef3e4);
+            border-radius:4px 4px 18px 18px;
+            position:relative;
+            box-shadow:0 35px 55px rgba(0,0,0,0.38), 0 4px 12px rgba(0,0,0,0.18);
+            max-height:85vh; overflow-y:auto;
+            font-family:'Cormorant Garamond',serif;
+            transform: scale(0.88) rotateX(28deg) translateY(24px);
+            opacity: 0;
+            transition:
+                transform 0.6s cubic-bezier(0.22,1,0.36,1),
+                opacity   0.5s ease;
+            transform-origin: top center;
+            perspective: 900px;
+        }
+        .poem-modal.active .letter-modal-card {
+            transform: scale(1) rotateX(0deg) translateY(0);
+            opacity: 1;
+        }
+        .letter-modal-card::before {
+            content:""; position:absolute; top:0; left:0; right:0; height:3px;
+            background:linear-gradient(90deg, transparent 5%, rgba(200,165,95,0.35) 20%, rgba(200,165,95,0.35) 80%, transparent 95%);
+        }
+        .letter-modal-inner { padding:2.2rem; }
+        .letter-modal-card h2 {
+            font-family:'Caveat',cursive; font-size:2.8rem;
+            border-bottom:2px dashed #e7cba5; display:inline-block;
+            margin-bottom:20px; color:#6a4932;
+        }
+        .poem-content { font-size:1.28rem; line-height:1.7; color:#2c241e; white-space:pre-wrap; margin:20px 0; }
+        .media-inside { margin:24px 0; text-align:center; }
+        .media-inside img,.media-inside video {
+            max-width:100%; border-radius:20px;
+            box-shadow:0 6px 16px rgba(0,0,0,0.12); margin:10px 0;
+        }
+        .close-hint { text-align:right; font-size:0.85rem; color:#b2895c; margin-top:22px; font-style:italic; }
+        .poem-modal.closing .letter-modal-card {
+            transform: scale(0.88) rotateX(28deg) translateY(24px);
+            opacity: 0;
+            transition:
+                transform 0.45s cubic-bezier(0.4,0,1,1),
+                opacity   0.38s ease;
+        }
+
+        .polaroid-grid { display:flex; flex-wrap:wrap; gap:2rem; justify-content:center; margin:40px 0; }
+        .polaroid {
+            background:#fef7ea; padding:16px 16px 32px; width:100%; max-width:270px;
+            box-shadow:8px 12px 22px rgba(0,0,0,0.2);
+            transition:all 0.35s cubic-bezier(0.2,0.9,0.4,1.1); cursor:pointer;
+            transform:rotate(var(--rot,0deg)); border-radius:8px 8px 14px 14px;
+        }
+        .polaroid:hover { transform:translateY(-12px) rotate(0deg) scale(1.02); box-shadow:14px 20px 32px rgba(0,0,0,0.25); }
+        .polaroid-img { width:100%; aspect-ratio:1/1; object-fit:cover; background:#e6d5b6; display:block; border:1px solid #e8dcbf; }
+        .polaroid-title { font-family:'Caveat',cursive; font-size:1.8rem; text-align:center; margin-top:14px; color:#4e3723; border-top:1px solid #eedbbc; padding-top:10px; }
+        footer { text-align:center; margin-top:60px; font-family:'Caveat',cursive; font-size:1.4rem; color:#b0875c; }
+
+        @media (max-width:700px) {
+            .polaroid-grid { gap:1.2rem; }
+            .hero h1 { font-size:2.8rem; }
+            .letter-modal-inner { padding:1.5rem; }
+            .second-letter-content { font-size: 0.85rem; padding: 20px; width: 90%; height: 80%; }
+            .second-letter-content h3 { font-size: 1.4rem; }
+            .second-letter-content .closing { font-size: 1rem; }
+        }
+        
+        @media (max-width:480px) {
+            .second-letter-content { font-size: 0.75rem; padding: 15px; }
+            .second-letter-content h3 { font-size: 1.2rem; }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="app-container">
+    <div class="gallery-section" id="gallerySection">
+
+        <div class="hero">
+            <span class="hero-tag">✦ a poetry collection ✦</span>
+            <h1>Embroidered</h1>
+            <p>✦ the dearest words reside in every stitch ✦</p>
+        </div>
+
+        <div class="polaroid-grid" id="polaroidGrid"></div>
+        <footer>♡ sana magustuhan mo! :) ♡</footer>
+
+    </div>
+</div>
+
+<!-- ENVELOPE -->
+<div class="folded-letter" id="foldedLetter">
+    <div class="envelope-scene" id="envelopeScene">
+        <div class="flap-3d-container" id="envFlap">
+            <div class="flap-shape"></div>
+        </div>
+        <div class="wax-seal" id="waxSeal">❤</div>
+        <div class="envelope-body">
+            <div class="envelope-inner">
+                <div class="envelope-top-row">
+                    <div class="return-address"></div>
+                    <div class="stamp">🌷</div>
+                </div>
+                <div class="postmark">
+                    <svg viewBox="0 0 70 70" fill="none">
+                        <circle cx="35" cy="35" r="30" stroke="rgba(100,65,28,0.3)" stroke-width="1.5" stroke-dasharray="3 2"/>
+                        <circle cx="35" cy="35" r="20" stroke="rgba(100,65,28,0.2)" stroke-width="1"/>
+                        <line x1="5" y1="28" x2="65" y2="28" stroke="rgba(100,65,28,0.22)" stroke-width="1.1"/>
+                        <line x1="5" y1="32" x2="65" y2="32" stroke="rgba(100,65,28,0.16)" stroke-width="0.8"/>
+                        <line x1="5" y1="36" x2="65" y2="36" stroke="rgba(100,65,28,0.16)" stroke-width="0.8"/>
+                        <text x="35" y="22" text-anchor="middle" font-family="serif" font-size="6" fill="rgba(90,55,20,0.38)" letter-spacing="1">WITH LOVE</text>
+                        <text x="35" y="50" text-anchor="middle" font-family="serif" font-size="5.5" fill="rgba(90,55,20,0.32)" letter-spacing="0.5">FOREVER ✦</text>
+                    </svg>
+                </div>
+                <div class="address-body">
+                </div>
+                <div class="envelope-lines"><div></div><div></div><div></div></div>
+            </div>
+        </div>
+        <div class="click-hint" id="clickHint">click the envelope!</div>
+    </div>
+</div>
+
+<!-- SECOND ENVELOPE (appears after gallery is visible) -->
+<div class="second-envelope-overlay" id="secondEnvelopeOverlay">
+    <div class="second-envelope-scene" id="secondEnvelopeScene">
+        <div class="second-flap-container" id="secondFlapContainer">
+            <div class="second-flap-shape"></div>
+        </div>
+        <div class="second-wax-seal" id="secondWaxSeal">❤</div>
+        <div class="second-envelope-body">
+            <div class="second-envelope-inner">
+                <!-- Letter content appears inside when opened -->
+                <div class="second-letter-content" id="secondLetterContent">
+                    <h3>₊˚ ✧ ‿︵‿୨୧‿︵‿ ✧ ˚₊</h3>
+                    <p>Hi Kyle!</p>
+                    
+                    <p>🎉 Another congratulations ulit!!! 🎉 Hindi man halata pero deep inside, I'm very happy for you and your achievements. You deserve every bit of success that comes your way, and honestly, even more. ✨</p>
+                    
+                    <p>I'll be honest when I say that this day is bittersweet for me. Hindi na kita makikita after ng event kaya I'll give my everything for the last time. Time felt so long when we were in it, but now it feels like it all passed in a blink.</p>
+
+                    <p>I made this website just for you. Nandito yung mga best poems na ginawa ko, dedicated for you. Pwede mong i-click yung mga polaroid pictures and magpapakita na yung poem. Nahirapan ako do'n sa blooming flower animation sa previous mail na nakita mo, pero worth it naman HAHAHAHA.</p>
+                    
+                    <p>Every poem here carries a piece of my heart. Some are whispers I was too shy to say aloud, others are dreams I've tucked between lines. When I couldn't find the right words to say, I wrote them down instead.</p>
+                    
+                    <p>You've left something in me that I'll carry even after today—not in a heavy way, but in a way that makes me grateful. Grateful to have known you, grateful to have created something because of you.</p>
+                    
+                    <p class="closing">Until we meet again (or not HAHAHA),<br>
+                    always rooting for you, always cheering for you 🎀<br>
+                    — Jomhel 💌</p>
+                    
+                    <div class="second-close-hint">✧ click anywhere outside to fold back ✧</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PAPER / BOUQUET OVERLAY -->
+<div class="paper-overlay" id="paperOverlay">
+    <div class="paper-card" id="paperCard">
+        <div class="paper-continue-hint" id="paperHint">✧ click here to continue ✧</div>
+    </div>
+</div>
+
+<!-- Background music for envelope bloom -->
+<audio id="bloomMusic" preload="auto">
+    <source src="plutoprojector_raw.mp3" type="audio/mpeg">
+    Your browser does not support audio.
+</audio>
+
+<script>
+const poems = [
+    { title:"candlelight grammar", text:"\"tomorrow\" \nholds no flowers, \nbut why does it bloom \nwhenever \ni speak your name? \n\n\"time\" \nholds nothing but constancy, \nbut why does it disobey its law \n— goes peacefully slow, \nwhenever each day is filled with you? \n\n\"gemstones\" \ncapture interest; \nbut your eyes, \nthe essence within \ncaptures the heart. \n\n\"paintings\" \nportrays entirety \nand reflection \n of things we hold dear \nbut i hope you won't mind, \nthat i wish to understand you deeply. \n\n\"sun\" \nwhere the eyes find no comfort \nthrough seen; \nnow, as you shine effortlessly, \ni wish to gaze with no end. \n\nyou have many flaws \nthat anyone could count \nbut still brought stars \nthat no one could ever count.",
+      thumbUrl:"tuaans-DRnoXMw43Fc-unsplash.jpg",
+      letterMediaType:"image", letterMediaUrl:"" },
+    { title:"windbound courier", text:"the wind takes all my whispers. \neven the words i stutter or mutter, \nthe courage i need to make one. \n\nif ever the day comes \nwhen you don't know who you are, \ndearest, do listen. \n\nyou'll wonder why the winds \ndescribe you as you should be. \nit now speaks your name \nin the most truest way. \n\nit knows the shape of you \nbetter than doubt ever did. \nit knows that i always \nmistook your eyes \nfor a thousand stars. \n\nit knows that i cherish \nyour every flaw you have. \nit also knows that i wish \ni'm not an outcast of your possibility. \n\nfor the last time, \nmy dearest, \nit knows my every tone \nhow i say... \n\n\n\"i love you.\"",
+      thumbUrl:"tara-mae-miller-DL8P4S83-r0-unsplash.jpg",
+      letterMediaType:"image", letterMediaUrl:"" },
+    { title:"unheld utterance", text:"the dawn welcomes you in delight \nbearing the knowledge of you to reside for hours. \ni envy daylight's touch upon your hand \nfor it reaches you daily towards no end. \n\nif a gentle breeze were to pass towards you, \nknow that it considers a blessing. \nthey greet you in their deepest jubilance \nand whisper it to falling leaves that makes them dance. \n\nthe blue skies make such sceneries \nto make charming eyes witness paradise \nbut don't let gray skies doubt your being; \nyour deep presence is the tongue of the universe. \n\nsoil becomes rich; they, in state of rejoice. \nit makes sure that your path is forever smooth. \non damp sand you tread, they tell the waters to carry it, \nas if there's divinity and holds a secret in between them. \n\nand when night reaches the senses of all, it looks for one. \nbesides the stars that reside, it holds to you with more interest. \nknow the reason why day and night are in conflict, \nfor they would want to hold you in countless hours without giving in to each other.",
+      thumbUrl:"aleksei-agafonov-ZXdQBEz-9BA-unsplash.jpg",
+      letterMediaType:"image", letterMediaUrl:"" },
+    { title:"in many ways", text:"in the most selfish way, \ni want to be the reason for your warm smile, \nfor it lightens every aspect of me. \n\nin the most selfish way, \ni want to be the only one who your dearest eyes can see, \nfor i know that how you see me speaks more. \n\nin the most selfish way, \ni want to be the only one you'll lean onto, \nfor it tells me that i matter to you. \n\nin the most selfish way, i wany tou hands to only dance in mine, \nfor it brings me in fantasy that you can take control only. \n\nin the most selfish way, \ni want you to run towards me if ever the worls was to be suddenly against you, \ni'll protect you and find a way to make you feel at ease. \n\nin the most selfish way, look for me if you ever got nightmares, \ni will catch your tears, provide you warmth and comfort in each of my embrace. \n\nin the most selfish way, \ncling your presence to mine if everything may seem dark and dull, \nwe'll walk together until we see an ounce of spark. \n\nin all of these selfish ways, \ni want myself to choose you always— \neven if fate may seem against it, \nthere's certainty when i'm with you, \nand i want to only feel that \nuntil i am no more.",
+      thumbUrl:"tuaans-9ytLTLqGdUU-unsplash.jpg",
+      letterMediaType:"image", letterMediaUrl:"" },
+    { title:"kalingulap", text:"some say that the color of the skies \nis the reflection of the waters in this world. \nwhen the skies speak with despair, \nthe waters listen with empathy and dance in rage, \nas if it was fighting for it. \n\nwhen the skies have cloudy thoughts, \nthe waters ease the vastness \nwith its quiet bueaty within. \nthe waters will not rest \nuntil the skies smile in golden light. \n\nbut when the waters seem to be lost in the night, \nthe skies wear the most beautiful stars— \nsilently chanting that hope still lingers in the dark. \nthe waters calmed without hesitation, \nwatching the skies with quiet admiration. \n\nwhen the waters are covered by the coldness of the night, \nthe skies awaken and give the most elegant morning embrace. \nas if it was caressed by its warmth \nand saying that \nthe vast itself can be the waters' eternal solace. \n\nthrough all of this \nthey never do it directly to each other. \nas if both of them are saying— \n\"you're the deepness i cannot reach. \nso i'll make you look more into my own.\" \n\nthey know time is swift and mischievous. \nthe skies are destined to know more of the world. \nthe waters are meant to dance in its place. \nthe distance between is enough to make one understand... \n\nthat only in their own reflections they can unite.",
+      thumbUrl:"braden-burson-0MsXVVNAGMc-unsplash.jpg",
+      letterMediaType:"image", letterMediaUrl:"" },
+    { title:"kailimyas", text:"\"itong pagguhit—\npampalipas-oras ka lang 'yan\"\nwikang may nais ikapit,\ngunit kulang kung pagnilayan.\n\nsa aking isipa'y hindi pa dumadapo,\nna karapat-dapat dumating ay kahalagahan.\nat ngayo'y batid ko,\nmga inukit kong larawan, bawat isa'y may dahilan.\n\nsa yakap ng hangin– \nito'y aking ibinabaling,\nat tila patuloy nilang hahanapin,\ngalan ko sa tinig mong may pahiling.\n\ntulad ng mga ibon, ako'y malaya,\ngunit nagtataglay rin ako ng hangganan.\naraw-araw, sa mga mata ko'y ikaw ang tanawaya;\ndila ko'y nabubuhol, walang kalakasan.\n\nkung sariling tinig ay 'di kayang magsimula,\nnawa'y mapansin sa bawat linya, may pag-aalala.\nat kung ang pagtatabing laging dala'y ligaya,\nmabatid mo na ito ang nais ipinapadala...",
+      thumbUrl:"kailimyaspic.jpg",
+      letterMediaType:"video", letterMediaUrl:"kailimyas.mp4" },
+    { title:"pagsapit", text:"pagsapit ng tanghali, ligaya ng araw ay sumilip,\nkamay ko'y hinawakan mo, nawaring panaginip.\nmga mata'y lumaki, at binulong sa sarili;\n\n\"iyong ganda'y hindi karapat-dapat ikubli.\"\n\nmasasabi bang ako'y sinuwerte?\ntila, sa buhay mo, ako ay naging isang parte.\nbigla kang tumakbo, at ako'y hinatak,\npapunta sa isang lugar na iyong ikinatatak.\n\ntayo'y nakarating sa ating kinaroroonan,\nsa taniman ng mga bulaklak, ako'y napamangha.\ntumungo sa burol, ika'y nagkuwento sa may punong kay luntian.\nnapaisip; boses mo't ang mga bulaklak ay tila magkapareha.\n\npagsapit ng hapon, langit na kay dalandan.\nsa ilalim ng puno, sabay nating pinagmasdan.\ntumayo ka, at ako'y iyong tinawag;\n\n\"maglaro tayo habang nandito pa ang liwanag!\"\n\nmuli kang ngumiti, ako'y napatayo.\nmga sandali na ang mga puso'y 'di kayang ipaglayo.\ntayo'y naghabulan hangga't sa mapagod,\nang lumulubog na araw ay sa'tin nanuod.\n\ntila bumabagal ang ikot ng mundo,\naminin na kay tamis ang bawat segundo.\nsinasabi ng kalangitan na tayo'y itinadhana,\npagkakataong hinding-hindi palalagpasin pa.\n\nnang sumapit ang gabi,\nsa ilalim ng mga bituing sumisindi.\niyong nilagay ang kamay ko sa malambot mong pisngi,\nat sabay mong sinabi;\n\n\"dinggin mo ang aking hiling,\nna mananatili ka sa aking piling.\nhindi nagsisinungaling ang aking bibig,\nat tama ang 'yong narinig.\"\n\nkatotohanan sa bawat sandali,\nbinigyang kulay ang mundong inakalang walang silbi,\nkaligayahang nariyan sa tabi, 'di mapakali,\nsa puso natin, ating nadama ang pagwawagi.\n\n\"aking sinta, lubos akong nagpapasalamat,\nikaw ay makasama sa isang araw, inakalang alamat.\nnawa'y hindi ka magsawa sa mga libo-libong bukas,\nna ika'y isayaw sa tula ko nang ilang oras.\"\n\ntinitigan mo 'ko, at ika'y napaluha,\natensyon ko'y iyong nakuha.\nniyakap mo 'ko nang mahigpit,\nnaramdaman ang pag-ibig mong mainit.\n\npagsapit ng gabi, sa ilalim ng mga bituing nagniningning,\n\n\"kay tagal kong hiniling na ika'y dumating.\"\n\no sinta, doon ko napansin,\nna ikaw lamang ang para sa'kin.",
+      thumbUrl:"tanya-barrow-aNnbrk_Z8Qw-unsplash.jpg",
+      letterMediaType:"image", letterMediaUrl:"pagsapitpic.jpg" }
+];
+
+let envelopeOpened = false;
+let musicStarted = false;
+let musicFadeInterval = null;
+let secondEnvelopeClosed = false;
+
+// Function to show second envelope after gallery appears
+function showSecondEnvelope() {
+    const secondOverlay = document.getElementById('secondEnvelopeOverlay');
+    
+    // Lock body scroll and gallery interaction
+    document.body.classList.add('second-envelope-active');
+    document.body.classList.add('gallery-locked');
+    
+    // Show the second envelope
+    secondOverlay.classList.add('active');
+}
+
+// Close second envelope function
+function closeSecondEnvelope() {
+    if (secondEnvelopeClosed) return;
+    secondEnvelopeClosed = true;
+    
+    const secondOverlay = document.getElementById('secondEnvelopeOverlay');
+    const secondScene = document.getElementById('secondEnvelopeScene');
+    
+    // Close the flap if it's open
+    if (secondScene.classList.contains('flap-open')) {
+        secondScene.classList.remove('flap-open');
+    }
+    
+    // Fade out and remove overlay
+    secondOverlay.classList.remove('active');
+    
+    // Unlock body scroll and gallery after animation
+    setTimeout(() => {
+        document.body.classList.remove('second-envelope-active');
+        document.body.classList.remove('gallery-locked');
+    }, 500);
+}
+
+// Second envelope click handler - opens the envelope
+document.getElementById('secondEnvelopeScene').addEventListener('click', function(e) {
+    // Open the envelope if it's not already open
+    if (!this.classList.contains('flap-open')) {
+        this.classList.add('flap-open');
+    }
+});
+
+// Close second envelope when clicking outside (on the overlay background)
+document.getElementById('secondEnvelopeOverlay').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeSecondEnvelope();
+    }
+});
+
+// Original envelope click handler
+document.getElementById('envelopeScene').addEventListener('click', async function () {
+    if (envelopeOpened) return;
+    envelopeOpened = true;
+
+    // Start music when envelope is clicked
+    if (!musicStarted) {
+         musicStarted = true;
+        setTimeout(() => {
+            const music = document.getElementById('bloomMusic');
+            music.volume = 0.5;
+            music.currentTime = 0;
+            music.play().catch(e => console.log('Music playback started'));
+        }, 1700);
+    }
+
+    const scene = document.getElementById('envelopeScene');
+    const waxSeal = document.getElementById('waxSeal');
+    const overlay = document.getElementById('paperOverlay');
+    const card = document.getElementById('paperCard');
+    const pHint = document.getElementById('paperHint');
+    const clickHint = document.getElementById('clickHint');
+
+    clickHint.style.transition = 'opacity 0.3s ease';
+    clickHint.style.opacity = '0';
+    clickHint.style.animation = 'none';
+
+    waxSeal.classList.add('cracking');
+    await new Promise(resolve => setTimeout(resolve, 280));
+    waxSeal.classList.remove('cracking');
+    scene.classList.add('flap-open');
+    await new Promise(resolve => setTimeout(resolve, 1150));
+
+    const wrap = document.createElement('div');
+    wrap.className = 'bouquet-wrap';
+    const canvas = document.createElement('canvas');
+    canvas.width = 660; canvas.height = 480;
+    wrap.appendChild(canvas);
+    card.insertBefore(wrap, pHint);
+
+    overlay.classList.add('appearing');
+
+    runBouquetOnCanvas(canvas, function onBloomed() {
+        pHint.classList.add('visible');
+    });
+
+    card.addEventListener('click', function goToGallery() {
+        card.removeEventListener('click', goToGallery);
+        
+        const music = document.getElementById('bloomMusic');
+        if (music && !music.paused && music.volume > 0) {
+            if (musicFadeInterval) clearInterval(musicFadeInterval);
+            let vol = music.volume;
+            musicFadeInterval = setInterval(() => {
+                vol = Math.max(0, vol - 0.03);
+                music.volume = vol;
+                if (vol <= 0) {
+                    music.pause();
+                    music.currentTime = 0;
+                    clearInterval(musicFadeInterval);
+                    musicFadeInterval = null;
+                }
+            }, 100);
+        }
+        
+        overlay.style.transition = 'opacity 0.7s ease';
+        overlay.style.opacity = '0';
+        const fl = document.getElementById('foldedLetter');
+        fl.style.transition = 'opacity 0.7s ease';
+        fl.style.opacity = '0';
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            fl.style.display = 'none';
+            document.body.classList.remove('envelope-showing');
+            document.getElementById('gallerySection').classList.add('visible');
+            
+            // Show the second envelope after gallery appears
+            setTimeout(() => {
+                showSecondEnvelope();
+            }, 300);
+        }, 700);
+    });
+});
+
+function runBouquetOnCanvas(canvas, onBloomed) {
+    const ctx = canvas.getContext('2d');
+    const W = 660, H = 480;
+
+    function easeOutCubic(t){ return 1-Math.pow(1-t,3); }
+    function easeOutQuint(t){ return 1-Math.pow(1-t,5); }
+    function easeInOutSine(t){ return -(Math.cos(Math.PI*t)-1)/2; }
+    function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+    const T0 = performance.now(), DUR = 4000;
+    const BX = 330, BY = 415;
+
+    const tulips = [
+        { lean:-68, h:238, delay:320, sc:0.82, r:108,g:48, b:185 },
+        { lean: 70, h:232, delay:300, sc:0.80, r:188,g:130,b:235 },
+        { lean:-28, h:250, delay: 60, sc:0.94, r:95, g:38, b:172 },
+        { lean: 30, h:245, delay: 80, sc:0.92, r:108,g:48, b:185 },
+        { lean:-95, h:168, delay:400, sc:0.76, r:188,g:130,b:235 },
+        { lean: 98, h:163, delay:420, sc:0.74, r:178,g:122,b:228 },
+        { lean:  0, h:190, delay:  0, sc:1.08, r:95, g:38, b:172 },
+    ];
+    tulips.forEach(t => { t.bx = BX + t.lean * 0.05; t.by = BY; });
+
+    let sparks = Array.from({length:60}, () => resetSpark({}));
+    function resetSpark(s){
+        s.x=60+Math.random()*540; s.y=20+Math.random()*320;
+        s.vx=(Math.random()-.5)*.46; s.vy=-.2-Math.random()*.44;
+        s.life=0; s.maxLife=0.65+Math.random(); s.r=.5+Math.random()*2; s.tw=Math.random()*Math.PI*2;
+        return s;
+    }
+
+    function drawBg(){
+        const bg=ctx.createRadialGradient(W*.42,H*.36,0,W*.5,H*.5,H*.95);
+        bg.addColorStop(0,'#2a1520'); bg.addColorStop(.35,'#1e0f18');
+        bg.addColorStop(.7,'#160c14'); bg.addColorStop(1,'#0e0810');
+        ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+        const bl=ctx.createRadialGradient(BX,BY-170,0,BX,BY-130,250);
+        bl.addColorStop(0,'rgba(180,80,120,.10)'); bl.addColorStop(.5,'rgba(140,55,95,.06)'); bl.addColorStop(1,'rgba(100,30,70,0)');
+        ctx.fillStyle=bl; ctx.fillRect(0,0,W,H);
+        const vg=ctx.createRadialGradient(W*.5,H*.5,H*.15,W*.5,H*.5,H*.82);
+        vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.5)');
+        ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+    }
+    function drawStem(tl,prog,now){
+        const sp=clamp(prog*1.3,0,1),se=easeOutCubic(sp);
+        const sw=Math.sin(now*.00092+tl.lean*.042)*2.6*se;
+        const tx=tl.bx+tl.lean*.82+sw,ty=tl.by-tl.h*easeInOutSine(se);
+        const mx=tl.bx+tl.lean*.44+sw*.5,my=tl.by-tl.h*easeInOutSine(se)*.5;
+        ctx.beginPath();ctx.moveTo(tl.bx,tl.by);ctx.quadraticCurveTo(mx,my,tx,ty);
+        ctx.lineWidth=10;ctx.strokeStyle='rgba(38,90,30,.10)';ctx.lineCap='round';ctx.stroke();
+        ctx.beginPath();ctx.moveTo(tl.bx,tl.by);ctx.quadraticCurveTo(mx,my,tx,ty);
+        ctx.lineWidth=4.5;ctx.strokeStyle=`rgba(44,108,36,${.9*se})`;ctx.lineCap='round';ctx.stroke();
+        ctx.beginPath();ctx.moveTo(tl.bx-1,tl.by);ctx.quadraticCurveTo(mx-1,my,tx-1,ty);
+        ctx.lineWidth=1.4;ctx.strokeStyle=`rgba(82,168,62,${.25*se})`;ctx.stroke();
+        if(prog>.3){
+            const lp=easeOutCubic(clamp((prog-.3)/.45,0,1));
+            const lx=tl.bx+tl.lean*.44*.46+sw*.36,ly=tl.by-tl.h*easeInOutSine(se)*.44;
+            const ls=tl.lean>=0?1:-1;
+            drawLeaf(lx,ly,ls*(-.48),29*lp*tl.sc,sw);
+            drawLeaf(lx,ly,ls*(.58),25*lp*tl.sc,sw);
+        }
+        return {x:tx,y:ty,sway:sw};
+    }
+    function drawLeaf(x,y,angle,len,sw){
+        ctx.save();ctx.translate(x,y);ctx.rotate(angle+sw*.007);
+        ctx.beginPath();ctx.moveTo(0,0);
+        ctx.bezierCurveTo(9,-len*.28,7,-len*.64,0,-len);
+        ctx.bezierCurveTo(-7,-len*.64,-8,-len*.28,0,0);
+        ctx.fillStyle='rgba(36,90,28,.58)';ctx.fill();ctx.restore();
+    }
+    function drawTulipHead(tx,ty,bloom,sc,r,g,b,lean,sw){
+        if(bloom<=0)return;
+        ctx.save();ctx.translate(tx,ty);ctx.rotate(lean*.005+sw*lean*.000090);
+        const pw=18*sc,ph=40*sc;
+        const gr=ctx.createRadialGradient(0,-ph*.3,0,0,-ph*.3,pw*3.8*bloom);
+        gr.addColorStop(0,`rgba(${r},${g},${b},${.42*bloom})`);
+        gr.addColorStop(.45,`rgba(${r},${g},${b},${.16*bloom})`);
+        gr.addColorStop(1,`rgba(${r},${g},${b},0)`);
+        ctx.beginPath();ctx.arc(0,-ph*.3,pw*3.8*bloom,0,Math.PI*2);ctx.fillStyle=gr;ctx.fill();
+        const hiR=Math.min(255,r+55),hiG=Math.min(235,g+50),hiB=Math.min(255,b+40);
+        const loR=Math.max(0,r-32),loG=Math.max(0,g-26),loB=Math.max(0,b-20);
+        for(let i=0;i<6;i++){
+            const a=(i/6)*Math.PI*2-Math.PI/2;
+            const ox=Math.cos(a)*pw*.56*bloom,oy=Math.sin(a)*pw*.33*bloom;
+            ctx.save();ctx.translate(ox,oy);ctx.rotate(a+Math.PI/2);
+            const s2=.38+bloom*.62;
+            const pg=ctx.createLinearGradient(0,0,0,-ph);
+            pg.addColorStop(0,`rgba(${hiR},${hiG},${hiB},.97)`);
+            pg.addColorStop(.35,`rgba(${r},${g},${b},.93)`);
+            pg.addColorStop(1,`rgba(${loR},${loG},${loB},.82)`);
+            ctx.beginPath();ctx.moveTo(0,0);
+            ctx.bezierCurveTo(-pw*.55*s2,-ph*.22,-pw*.86*s2,-ph*.62,0,-ph*(.52+bloom*.48));
+            ctx.bezierCurveTo(pw*.86*s2,-ph*.62,pw*.55*s2,-ph*.22,0,0);
+            ctx.fillStyle=pg;ctx.fill();
+            ctx.strokeStyle=`rgba(${hiR},${hiG},${hiB},${.28*bloom})`;ctx.lineWidth=1.1;ctx.stroke();
+            ctx.restore();
+        }
+        if(bloom>.5){
+            const ca=clamp((bloom-.5)*2,0,1);
+            const cg=ctx.createRadialGradient(0,-ph*.1,0,0,-ph*.1,8*sc*ca);
+            cg.addColorStop(0,`rgba(245,215,255,${ca*.9})`);cg.addColorStop(1,`rgba(${r},${g},${b},0)`);
+            ctx.beginPath();ctx.arc(0,-ph*.1,8*sc*ca,0,Math.PI*2);ctx.fillStyle=cg;ctx.fill();
+        }
+        ctx.restore();
+    }
+    function drawWrap(prog){
+        const wp=clamp((prog-.04)/.48,0,1),we=easeOutCubic(wp);
+        if(we<=0)return;
+        const cx=BX,tY=BY-132*we,bY=BY+84*we,tw=110*we,bw=18*we,h=bY-tY;
+        ctx.save();ctx.globalAlpha=we;
+        ctx.save();ctx.translate(cx,tY);ctx.rotate(-.036);
+        ctx.beginPath();ctx.moveTo(-tw*1.1,0);ctx.bezierCurveTo(-tw*1.12,h*.32,-bw*1.2,h*.82,-bw,h);
+        ctx.lineTo(bw,h);ctx.bezierCurveTo(bw*1.2,h*.82,tw*1.12,h*.32,tw*1.1,0);
+        ctx.closePath();ctx.fillStyle='rgba(38,20,65,.68)';ctx.fill();ctx.restore();
+        ctx.beginPath();ctx.moveTo(cx-tw,tY);ctx.bezierCurveTo(cx-tw*.88,tY+h*.33,cx-bw*1.1,tY+h*.8,cx-bw,bY);
+        ctx.lineTo(cx+bw,bY);ctx.bezierCurveTo(cx+bw*1.1,tY+h*.8,cx+tw*.88,tY+h*.33,cx+tw,tY);ctx.closePath();
+        const wg=ctx.createLinearGradient(cx-tw,tY,cx+tw,bY);
+        wg.addColorStop(0,'rgba(65,38,102,.90)');wg.addColorStop(.35,'rgba(88,54,132,.87)');
+        wg.addColorStop(.65,'rgba(70,42,110,.89)');wg.addColorStop(1,'rgba(48,26,80,.93)');
+        ctx.fillStyle=wg;ctx.fill();
+        ctx.beginPath();ctx.moveTo(cx-tw,tY);ctx.bezierCurveTo(cx-tw*.88,tY+h*.33,cx-bw*1.1,tY+h*.8,cx-bw,bY);
+        ctx.lineTo(cx-bw+24,bY);ctx.bezierCurveTo(cx-bw*1.1+24,tY+h*.8,cx-tw*.88+28,tY+h*.33,cx-tw+30,tY);
+        ctx.closePath();ctx.fillStyle='rgba(14,5,30,.32)';ctx.fill();
+        ctx.beginPath();ctx.moveTo(cx+tw,tY);ctx.bezierCurveTo(cx+tw*.88,tY+h*.33,cx+bw*1.1,tY+h*.8,cx+bw,bY);
+        ctx.lineTo(cx+bw-24,bY);ctx.bezierCurveTo(cx+bw*1.1-24,tY+h*.8,cx+tw*.88-28,tY+h*.33,cx+tw-28,tY);
+        ctx.closePath();ctx.fillStyle='rgba(14,5,30,.28)';ctx.fill();
+        ctx.beginPath();ctx.moveTo(cx-tw,tY);ctx.bezierCurveTo(cx-tw*.5,tY-13*we,cx+tw*.5,tY-13*we,cx+tw,tY);
+        ctx.lineWidth=2.5;ctx.strokeStyle='rgba(165,125,222,.50)';ctx.lineCap='round';ctx.stroke();
+        for(let i=1;i<=3;i++){
+            const t=i/4;ctx.beginPath();ctx.moveTo(cx+tw*(t*2-1)*.7,tY+6);ctx.lineTo(cx+bw*(t*2-1)*.78,bY-10);
+            ctx.strokeStyle='rgba(148,108,205,.10)';ctx.lineWidth=1;ctx.stroke();
+        }
+        const rp=clamp((prog-.65)/.35,0,1);
+        if(rp>0){
+            const re=easeOutCubic(rp),ry=tY+h*.52,rw=(tw*(1-.52)+bw*.52)*.76*re;
+            ctx.beginPath();ctx.roundRect(cx-rw,ry-8,rw*2,16,8);
+            const rb=ctx.createLinearGradient(cx-rw,ry,cx+rw,ry);
+            rb.addColorStop(0,'rgba(122,65,192,.95)');rb.addColorStop(.5,'rgba(165,102,242,.98)');rb.addColorStop(1,'rgba(112,58,180,.95)');
+            ctx.fillStyle=rb;ctx.fill();
+            if(rp>.55){
+                const bp=easeOutCubic(clamp((rp-.55)/.45,0,1));
+                ctx.save();ctx.translate(cx,ry);
+                ctx.beginPath();ctx.ellipse(-rw*.34,-13*bp,16*bp,13*bp,-.42,0,Math.PI*2);ctx.fillStyle='rgba(138,76,212,.88)';ctx.fill();
+                ctx.beginPath();ctx.ellipse(rw*.34,-13*bp,16*bp,13*bp,.42,0,Math.PI*2);ctx.fillStyle='rgba(155,92,225,.88)';ctx.fill();
+                ctx.beginPath();ctx.ellipse(0,-1,6*bp,5*bp,0,0,Math.PI*2);ctx.fillStyle='rgba(192,142,252,.95)';ctx.fill();
+                ctx.restore();
+            }
+        }
+        ctx.restore();
+    }
+    function drawSparks(prog,now){
+        const t=now*.001;
+        for(const s of sparks){
+            s.life+=.009;if(s.life>s.maxLife)resetSpark(s);
+            s.x+=s.vx;s.y+=s.vy;
+            const alpha=Math.sin((s.life/s.maxLife)*Math.PI)*prog*.8;
+            const tw2=.55+.45*Math.sin(t*4.5+s.tw),sz=s.r*tw2;
+            ctx.save();ctx.translate(s.x,s.y);ctx.rotate(t*1.3+s.tw);
+            for(let arm=0;arm<4;arm++){
+                ctx.save();ctx.rotate(arm*Math.PI/2);
+                ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-sz*3.5);
+                ctx.lineWidth=sz*.6;ctx.strokeStyle=`rgba(230,175,210,${alpha*tw2})`;ctx.lineCap='round';ctx.stroke();ctx.restore();
+            }
+            ctx.beginPath();ctx.arc(0,0,sz,0,Math.PI*2);ctx.fillStyle=`rgba(245,210,230,${alpha*.9})`;ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    let animId, bloomed = false;
+    function render(now){
+        const elapsed=now-T0, prog=clamp(elapsed/DUR,0,1);
+        drawBg();
+        const sorted=[...tulips].sort((a,b)=>b.h-a.h);
+        for(const tl of sorted){
+            const fp=clamp((elapsed-tl.delay)/(DUR*.84),0,1),sp=easeOutCubic(fp);
+            const tip=drawStem(tl,sp,now);
+            drawTulipHead(tip.x,tip.y,sp>.5?easeOutQuint(clamp((sp-.5)/.5,0,1)):0,tl.sc,tl.r,tl.g,tl.b,tl.lean,tip.sway);
+        }
+        drawWrap(prog);drawSparks(prog,now);
+        if(prog < 1){
+            animId = requestAnimationFrame(render);
+        } else {
+            if(!bloomed){ bloomed=true; if(onBloomed) onBloomed(); }
+            function sparkleLoop(n){
+                drawBg();
+                const s2=[...tulips].sort((a,b)=>b.h-a.h);
+                for(const tl of s2){const tip=drawStem(tl,1,n);drawTulipHead(tip.x,tip.y,1,tl.sc,tl.r,tl.g,tl.b,tl.lean,tip.sway);}
+                drawWrap(1);drawSparks(1,n);
+                animId=requestAnimationFrame(sparkleLoop);
+            }
+            animId=requestAnimationFrame(sparkleLoop);
+        }
+    }
+    animId=requestAnimationFrame(render);
+}
+
+function buildGallery(){
+    const grid=document.getElementById('polaroidGrid'); grid.innerHTML='';
+    poems.forEach(poem=>{
+        const p = document.createElement('div');
+        p.className = 'polaroid';
+        const rot=(Math.random()*4-2).toFixed(1);
+        p.style.setProperty('--rot', rot + 'deg');
+
+        const imgSrc = poem.thumbUrl || 'https://picsum.photos/id/104/200/200';
+        p.innerHTML=`<img class="polaroid-img" src="${imgSrc}" alt="poem visual"><div class="polaroid-title">${poem.title}</div>`;
+
+        p.addEventListener('click', e => { e.stopPropagation(); openPoemLetter(poem); });
+        grid.appendChild(p);
+    });
+}
+
+function openPoemLetter(poem){
+    const existing = document.querySelector('.poem-modal');
+    if(existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.className = 'poem-modal';
+    const card = document.createElement('div');
+    card.className = 'letter-modal-card';
+    let mediaHtml = '';
+    if(poem.letterMediaType==='image'&&poem.letterMediaUrl)
+        mediaHtml=`<div class="media-inside"><img src="${poem.letterMediaUrl}" alt="memory" loading="lazy"></div>`;
+    else if(poem.letterMediaType==='video'&&poem.letterMediaUrl)
+        mediaHtml=`<div class="media-inside"><video controls autoplay muted loop><source src="${poem.letterMediaUrl}" type="video/mp4">Your browser does not support video.</video></div>`;
+    card.innerHTML=`
+        <div class="letter-modal-inner">
+            <h2>${poem.title}</h2>
+            <div class="poem-content">${poem.text.replace(/\n/g,'<br>')}</div>
+            ${mediaHtml}
+            <div class="close-hint">✧ click anywhere outside to fold back ✧</div>
+        </div>`;
+    modal.appendChild(card);
+    document.body.appendChild(modal);
+    
+    document.body.classList.add('modal-open');
+    
+    function closeModal(){
+        modal.classList.remove('active');
+        modal.classList.add('closing');
+        document.body.classList.remove('modal-open');
+        setTimeout(()=>{ if(modal.parentNode) modal.remove(); }, 450);
+    }
+    modal.addEventListener('click', e=>{ if(e.target === modal) closeModal(); });
+    requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ modal.classList.add('active'); }); });
+}
+
+document.body.classList.add('envelope-showing');
+buildGallery();
+
+// ============================================
+// SECURITY MEASURES - Disable Developer Tools & Text Selection
+// ============================================
+
+// 1. Disable right-click context menu
+document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    return false;
+});
+
+// 2. Disable text selection (highlighting)
+document.addEventListener('selectstart', function(e) {
+    e.preventDefault();
+    return false;
+});
+
+// 3. Disable text selection via CSS (additional protection)
+document.body.style.userSelect = 'none';
+document.body.style.webkitUserSelect = 'none';
+document.body.style.msUserSelect = 'none';
+document.body.style.MozUserSelect = 'none';
+
+// 4. Disable keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // List of key combinations to block
+    const blockedKeys = [
+        // Ctrl+U (View Source)
+        (e.ctrlKey && (e.key === 'u' || e.key === 'U')),
+        
+        // Ctrl+S (Save Page)
+        (e.ctrlKey && (e.key === 's' || e.key === 'S')),
+        
+        // Ctrl+P (Print)
+        (e.ctrlKey && (e.key === 'p' || e.key === 'P')),
+        
+        // Ctrl+A (Select All)
+        (e.ctrlKey && (e.key === 'a' || e.key === 'A')),
+        
+        // Ctrl+C (Copy)
+        (e.ctrlKey && (e.key === 'c' || e.key === 'C')),
+        
+        // Ctrl+X (Cut)
+        (e.ctrlKey && (e.key === 'x' || e.key === 'X')),
+        
+        // Ctrl+Shift+I (DevTools)
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')),
+        
+        // Ctrl+Shift+J (Console)
+        (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j')),
+        
+        // Ctrl+Shift+C (Inspect Element)
+        (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c')),
+        
+        // F12 (DevTools)
+        (e.key === 'F12'),
+        
+        // Ctrl+E (Search/Inspector)
+        (e.ctrlKey && (e.key === 'e' || e.key === 'E')),
+    ];
+    
+    // Check if any blocked key combination is pressed
+    if (blockedKeys.some(condition => condition === true)) {
+        e.preventDefault();
+        return false;
+    }
+    
+    // Block Ctrl+Shift+K (other dev shortcuts)
+    if (e.ctrlKey && e.shiftKey && (e.key === 'K' || e.key === 'k')) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// 5. Additional listener for F12 and Ctrl+Shift+I (double protection)
+window.addEventListener('keydown', function(e) {
+    if (e.key === 'F12') {
+        e.preventDefault();
+        return false;
+    }
+    if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
+        e.preventDefault();
+        return false;
+    }
+    if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
+        e.preventDefault();
+        return false;
+    }
+    if (e.ctrlKey && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        return false;
+    }
+    if (e.ctrlKey && (e.key === 'a' || e.key === 'A')) {
+        e.preventDefault();
+        return false;
+    }
+    if (e.ctrlKey && (e.key === 'c' || e.key === 'C')) {
+        e.preventDefault();
+        return false;
+    }
+    if (e.ctrlKey && (e.key === 'x' || e.key === 'X')) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// 6. Disable drag and drop (prevents dragging images or text)
+document.addEventListener('dragstart', function(e) {
+    e.preventDefault();
+    return false;
+});
+
+// 7. Disable copy event
+document.addEventListener('copy', function(e) {
+    e.preventDefault();
+    return false;
+});
+
+// 8. Disable cut event
+document.addEventListener('cut', function(e) {
+    e.preventDefault();
+    return false;
+});
+
+// 9. Disable paste event (optional)
+document.addEventListener('paste', function(e) {
+    e.preventDefault();
+    return false;
+});
+
+// 10. Warn when DevTools is opened (detection)
+(function detectDevTools() {
+    let devToolsOpen = false;
+    const element = new Image();
+    
+    Object.defineProperty(element, 'id', {
+        get: function() {
+            devToolsOpen = true;
+            console.clear();
+            // Optional: show a friendly message
+            console.log('%c🌸 This website is a special gift. Please enjoy it as intended. 🌸', 'color: #b89060; font-size: 14px; font-family: Caveat, cursive;');
+        }
+    });
+    
+    setInterval(() => {
+        console.log(element);
+        console.clear();
+    }, 1000);
+})();
+
+// 11. Prevent console from being used for debugging (optional)
+// This clears the console periodically to discourage snooping
+setInterval(() => {
+    console.clear();
+}, 5000);
+
+console.log('%c🔒 This website is protected. Please enjoy the poems! 💌', 'color: #b89060; font-size: 12px; font-family: Caveat, cursive;');
+</script>
+</body>
+</html>
