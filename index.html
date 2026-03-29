@@ -1198,6 +1198,11 @@ function buildGallery(){
 function openPoemLetter(poem){
     const existing = document.querySelector('.poem-modal');
     if(existing) existing.remove();
+    
+    // Save current scroll position of the gallery section
+    const gallerySection = document.getElementById('gallerySection');
+    const savedScrollTop = window.scrollY;
+    
     const modal = document.createElement('div');
     modal.className = 'poem-modal';
     const card = document.createElement('div');
@@ -1218,12 +1223,22 @@ function openPoemLetter(poem){
     modal.appendChild(card);
     document.body.appendChild(modal);
     
+    // Lock body scroll and save position
     document.body.classList.add('modal-open');
+    document.body.style.top = `-${savedScrollTop}px`;
     
     function closeModal(){
+        // Get saved scroll position
+        const scrollY = parseInt(document.body.style.top || '0') * -1;
+        
         modal.classList.remove('active');
         modal.classList.add('closing');
         document.body.classList.remove('modal-open');
+        document.body.style.top = '';
+        
+        // Restore scroll position after modal closes
+        window.scrollTo(0, scrollY);
+        
         setTimeout(()=>{ if(modal.parentNode) modal.remove(); }, 450);
     }
     
