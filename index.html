@@ -1235,23 +1235,26 @@ function openPoemLetter(poem){
     modal.appendChild(card);
     document.body.appendChild(modal);
     
-    // Lock body scroll and save position
-    document.body.classList.add('modal-open');
+    // Lock body scroll and save position — set top BEFORE adding class to prevent jump
     document.body.style.top = `-${savedScrollTop}px`;
+    document.body.classList.add('modal-open');
     
     function closeModal(){
         // Get saved scroll position
         const scrollY = parseInt(document.body.style.top || '0') * -1;
         
+        // Start fade-out animation first
         modal.classList.remove('active');
         modal.classList.add('closing');
-        document.body.classList.remove('modal-open');
-        document.body.style.top = '';
         
-        // Restore scroll position after modal closes
-        window.scrollTo(0, scrollY);
+        // Wait for fade to complete, THEN remove fixed positioning and restore scroll
+        setTimeout(() => {
+            document.body.classList.remove('modal-open');
+            document.body.style.top = '';
+            window.scrollTo(0, scrollY);
+        }, 420);
         
-        setTimeout(()=>{ if(modal.parentNode) modal.remove(); }, 450);
+        setTimeout(()=>{ if(modal.parentNode) modal.remove(); }, 480);
     }
     
     // Close when clicking X button
