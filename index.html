@@ -617,9 +617,16 @@
             position: relative;
         }
         .letter-modal-card h2 {
-            font-family:'Caveat',cursive; font-size:2.8rem;
-            border-bottom:2px dashed #e7cba5; display:inline-block;
-            margin-bottom:20px; color:#6a4932;
+            font-family:'Caveat',cursive;
+            font-size: clamp(1.6rem, 5vw, 2.8rem);
+            border-bottom:2px dashed #e7cba5;
+            display:inline-block;
+            margin-bottom:20px;
+            color:#6a4932;
+            word-break: break-word;
+            max-width: 100%;
+            text-align: center;
+            line-height: 1.3;
         }
         .poem-content { font-size:1.28rem; line-height:1.7; color:#2c241e; white-space:pre-wrap; margin:20px 0; }
         .media-inside { margin:24px 0; text-align:center; }
@@ -675,6 +682,12 @@
             .second-letter-content { font-size: 0.85rem; padding: 20px; width: 90%; height: 80%; }
             .second-letter-content h3 { font-size: 1.4rem; }
             .second-letter-content .closing { font-size: 1rem; }
+
+            .letter-modal-card h2 {
+                font-size: clamp(2.1rem, 4.5vw, 2.2rem);
+                text-align: left;
+                width: auto;
+            }
         }
         
         @media (max-width:480px) {
@@ -686,6 +699,12 @@
                 width: 26px;
                 height: 26px;
                 font-size: 16px;
+            }
+
+            .letter-modal-card h2 {
+                font-size: clamp(1.2rem, 4vw, 1.8rem);
+                margin-bottom: 15px;
+                padding-right: 20px;
             }
         }
     </style>
