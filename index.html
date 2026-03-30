@@ -298,6 +298,44 @@
             user-select: none;
         }
         
+        /* Gallery hint - responsive */
+        .gallery-hint {
+            text-align: center;
+            font-family: 'Caveat', cursive;
+            font-size: clamp(0.8rem, 3vw, 1.1rem);
+            color: #b28b60;
+            margin: 0 0 25px 0;
+            opacity: 0.75;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .gallery-hint-icon {
+            font-size: clamp(0.9rem, 3.5vw, 1.1rem);
+            animation: gentleBob 2s ease-in-out infinite;
+            display: inline-block;
+        }
+        
+        @keyframes gentleBob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+        
+        /* Hide hint on very small screens if needed (optional) */
+        @media (max-width: 380px) {
+            .gallery-hint {
+                margin-bottom: 15px;
+                font-size: 0.7rem;
+            }
+            .gallery-hint-icon {
+                font-size: 0.8rem;
+            }
+        }
+        
         /* Second envelope overlay */
         .second-envelope-overlay {
             position: fixed;
@@ -474,7 +512,6 @@
             font-size: clamp(0.7rem, 2.5vw, 0.85rem);
             font-family: 'Cormorant Garamond', serif;
             color: #b28b60;
-            /*margin-top: 8px;*/
             font-style: italic;
             font-weight: normal;
             letter-spacing: 0.5px;
@@ -733,6 +770,12 @@
             <p>✦ the dearest words reside in every stitch ✦</p>
         </div>
 
+        <!-- GALLERY HINT - Responsive -->
+        <div class="gallery-hint">
+            <span class="gallery-hint-icon">🌸</span>
+            <span>click any polaroid to read</span>
+        </div>
+
         <div class="polaroid-grid" id="polaroidGrid"></div>
         <footer>sana nagustuhan mo! :) ♡</footer>
 
@@ -790,13 +833,17 @@
                     
                     <p>I'll be honest when I say that this day is bittersweet for me. Hindi na kita makikita after ng event kaya I'll give my everything for the last time. Time felt so long when I always see you, but now it feels like it all passed in a blink.</p>
 
-                    <p>I made this website just for you. Nandito yung mga best poems na ginawa ko, dedicated for you. Pwede mong i-click yung mga polaroid pictures and magpapakita na yung poem. Nahirapan ako do'n sa blooming flower animation sa previous mail na nakita mo, pero worth it naman HAHAHAHA.</p>
+                    <p>Yung drawing na iniabot ko sa'yo no'ng Feb at yung ngayon, sana nagustuhan mo kahit flawed or maraming hindi aligned HAHAHA (minaliit sariling gawa eh no? so lupet!). I don't do drawings that much, not unlike during my elem days.</p>
+
+                    <p>And yung banana cake? Hindi ka magsisisi d'yan! Order ka sa mother ko if natipuhan mo hehehe (may pa-advertizing pang nalaman).</p>
+
+                    <p>Anyways, I made this website just for you. Nandito yung mga best poems na ginawa ko, dedicated for you. Angas ba? hehe. Pwede mong i-click yung mga polaroid pictures and magpapakita na yung poem. Nahirapan ako do'n sa blooming flower animation sa previous mail na nakita mo, pero worth it naman HAHAHAHA</p>
                     
                     <p>Every poem here carries a piece of my heart. Some are whispers I was too shy to say aloud, others are dreams I've tucked between lines. When I couldn't find the right words to say, I wrote them down instead.</p>
                     
                     <p>You've left something in me that I'll carry even after today—not in a heavy way, but in a way that makes me grateful. Grateful to have known you, grateful to have created something because of you.</p>
                     
-                    <p>I wish you happiness, abundance, safety, and health in every step you make. <br>
+                    <p>I wish you happiness, abundance, safety, and good health in every step you take. <br>
                     Additionally, I wish you the best of luck sa college journey mu!! </p>
                     <p class="closing">
                     Always rooting for you, always cheering for you 🎀<br>
@@ -848,7 +895,7 @@ const poems = [
     { title:"pagsapit", text:"pagsapit ng tanghali, ligaya ng araw ay sumilip,\nkamay ko'y hinawakan mo, nawaring panaginip.\nmga mata'y lumaki, at binulong sa sarili;\n\n\"iyong ganda'y hindi karapat-dapat ikubli.\"\n\nmasasabi bang ako'y sinuwerte?\ntila, sa buhay mo, ako ay naging isang parte.\nbigla kang tumakbo, at ako'y hinatak,\npapunta sa isang lugar na iyong ikinatatak.\n\ntayo'y nakarating sa ating kinaroroonan,\nsa taniman ng mga bulaklak, ako'y napamangha.\ntumungo sa burol, ika'y nagkuwento sa may punong kay luntian.\nnapaisip; boses mo't ang mga bulaklak ay tila magkapareha.\n\npagsapit ng hapon, langit na kay dalandan.\nsa ilalim ng puno, sabay nating pinagmasdan.\ntumayo ka, at ako'y iyong tinawag;\n\n\"maglaro tayo habang nandito pa ang liwanag!\"\n\nmuli kang ngumiti, ako'y napatayo.\nmga sandali na ang mga puso'y 'di kayang ipaglayo.\ntayo'y naghabulan hangga't sa mapagod,\nang lumulubog na araw ay sa'tin nanuod.\n\ntila bumabagal ang ikot ng mundo,\naminin na kay tamis ang bawat segundo.\nsinasabi ng kalangitan na tayo'y itinadhana,\npagkakataong hinding-hindi palalagpasin pa.\n\nnang sumapit ang gabi,\nsa ilalim ng mga bituing sumisindi.\niyong nilagay ang kamay ko sa malambot mong pisngi,\nat sabay mong sinabi;\n\n\"dinggin mo ang aking hiling,\nna mananatili ka sa aking piling.\nhindi nagsisinungaling ang aking bibig,\nat tama ang 'yong narinig.\"\n\nkatotohanan sa bawat sandali,\nbinigyang kulay ang mundong inakalang walang silbi,\nkaligayahang nariyan sa tabi, 'di mapakali,\nsa puso natin, ating nadama ang pagwawagi.\n\n\"aking sinta, lubos akong nagpapasalamat,\nikaw ay makasama sa isang araw, inakalang alamat.\nnawa'y hindi ka magsawa sa mga libo-libong bukas,\nna ika'y isayaw sa tula ko nang ilang oras.\"\n\ntinitigan mo 'ko, at ika'y napaluha,\natensyon ko'y iyong nakuha.\nniyakap mo 'ko nang mahigpit,\nnaramdaman ang pag-ibig mong mainit.\n\npagsapit ng gabi, sa ilalim ng mga bituing nagniningning,\n\n\"kay tagal kong hiniling na ika'y dumating.\"\n\no sinta, doon ko napansin,\nna ikaw lamang ang para sa'kin.",
        thumbUrl:"tanya-barrow-aNnbrk_Z8Qw-unsplash.jpg",
        letterMediaType:"image", letterMediaUrl:"pagsapitpic.jpg" },
-    { title: "saunter", text: "to walk beside the world's noise, \nto talk about few simple rejoice, \ni stand still by choice \nand firmly listen to your heart's voice. \n\ni can see, i can hear \nyet somehow not free, when you are not near. \ni'm in glee, but omething i fear— \nvast as the sea, but not quite clear. \n\nwish and tell; perhaps i'm not well. \nto swell is but everything bidding farewell. \nbut if my whispers; in the wind, resides \nmay forever prosper—in your heart, confides. \n\ni speak, not against my will. \ni write; there's a thing i must fulfil. \nas you tread into something you know next, \ni gaze at you with awe, admiration with its context.", 
+    { title: "saunter", text: "to walk beside the world's noise, \nto talk about few simple rejoice, \ni stand still by choice \nand firmly listen to your heart's voice. \n\ni can see, i can hear \nyet somehow not free, when you are not near. \ni'm in glee, but something i fear— \nvast as the sea, but not quite clear. \n\nwish and tell; perhaps i'm not well. \nto swell is but everything bidding farewell. \nbut if my whispers; in the wind, resides \nmay forever prosper—in your heart, confides. \n\ni speak, not against my will. \ni write; there's a thing i must fulfil. \nas you tread into something you know next, \ni gaze at you with awe, admiration with its context.", 
        thumbUrl: "andrew-rivera-FKRGxKhDxt4-unsplash.jpg",
        letterMediaType: "image", letterMediaUrl: "" }
 ];
